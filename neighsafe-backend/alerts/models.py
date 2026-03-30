@@ -2,9 +2,9 @@ from django.db import models
 from django.conf import settings
 
 class Alert(models.Model):
-    title=models.CharField(max_lenght=100)
+    title=models.CharField(max_length=100)
     description=models.TextField()
-    location=models.CharField(max_lenght=50)
+    location=models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     views = models.PositiveIntegerField(default=0)
 
@@ -17,7 +17,7 @@ class Alert(models.Model):
     def __str__(self):
         return self.title
 
-class Comment(models.Model)
+class Comment(models.Model):
     alert = models.ForeignKey(
      Alert,
      on_delete=models.CASCADE,
