@@ -51,6 +51,12 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+# Diz ao Allauth para NÃO exigir verificação de email para fazer login
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+
+# Garante que o Django aceita autenticação tanto por JWT quanto por sessão clássica
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',

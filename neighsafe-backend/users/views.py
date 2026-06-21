@@ -1,74 +1,65 @@
-from django.shortcuts import render
-from rest_framework import generics
-from rest_framework.generics import RetrieveAPIView
-from .serializers import RegisterSerializer
 from django.contrib.auth import get_user_model
-from .serializers import UserSerializer
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
+from rest_framework import generics
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer
-from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework_simplejwt.views import TokenObtainPairView
 
+from .serializers import (
+    RegisterSerializer,
+    UserSerializer,
+    CustomTokenObtainPairSerializer
+)
 
 User = get_user_model()
 
-class UserProfileView(RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
+# 1. Login Customizado (Retorna tokens + dados do utilizador como is_authority)
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+# 2. Registo de Novos Utilizadores
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
-    permission_classes = (AllowAny,)
+    permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
 
-
+# 3. Obter os dados do próprio utilizador logado
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
-        
 
+# 4. Obter o perfil de qualquer utilizador pelo ID
 class UserProfileView(generics.RetrieveAPIView):
-
     queryset = User.objects.all()
-
     serializer_class = UserSerializer
-
     permission_classes = [IsAuthenticated]
 
-
+# 5. Atualizar o próprio perfil
 class UpdateProfileView(APIView):
-
     permission_classes = [IsAuthenticated]
+    
+    # IMPORTANTE: Isto é obrigatório para receber ficheiros (avatar) do Frontend
+    parser_classes = [MultiPartParser, FormParser]
 
     def put(self, request):
-
         user = request.user
 
         # NÃO ALTERA NOME
+        user.city = request.data.get("city", user.city)
+        user.bio = request.data.get("bio", user.bio)
 
-        user.city = request.data.get(
-            "city",
-            user.city
-        )
-
-        user.bio = request.data.get(
-            "bio",
-            user.bio
-        )
-
+        # Atualiza a foto se ela for enviada no pedido
         if "avatar" in request.FILES:
             user.avatar = request.FILES["avatar"]
 
         user.save()
+
+        # Prepara a resposta garantindo que a URL da imagem é absoluta (com http://...)
+        avatar_url = request.build_absolute_uri(user.avatar.url) if user.avatar else None
 
         return Response({
             "id": user.id,
@@ -76,9 +67,5 @@ class UpdateProfileView(APIView):
             "last_name": user.last_name,
             "city": user.city,
             "bio": user.bio,
-            "avatar": (
-                user.avatar.url
-                if user.avatar
-                else None
-            )
+            "avatar": avatar_url
         })
