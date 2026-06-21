@@ -25,9 +25,38 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None
-    email = models.EmailField(unique=True)      
 
-    USERNAME_FIELD = 'email'
+    email = models.EmailField(unique=True)
+
+    bio = models.TextField(blank=True)
+
+    city = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        blank=True,
+        null=True
+    )
+
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+    def __str__(self):
+        return self.email
+
+    # NOVOS CAMPOS PARA AUTORIDADES
+    is_authority = models.BooleanField(
+        default=False,
+        help_text="Designa se este utilizador é uma entidade de segurança."
+    )
+    
+    station_name = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text="Nome da esquadra, ex: 'Esquadra de Tchumene'."
+    )
