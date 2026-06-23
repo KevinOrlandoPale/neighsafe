@@ -1,8 +1,45 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth.models import User
 
 
 class Alert(models.Model):
+
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('EM_RESOLUCAO', 'Em Resolução'),
+        ('RESOLVIDO', 'Resolvido'),
+    ]
+
+    title = models.CharField(max_length=255)
+    location = models.CharField(max_length=255)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    type = models.CharField(max_length=50) # Ex: EMERGÊNCIA, CRÍTICO
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Novos campos para controlo de estado e atribuição
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDENTE')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_alerts')
+
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='alertas_atribuidos' # Nome diferente (em português para ser óbvio)
+    )
+
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='alertas_resolvidos' # Nome completamente diferente
+    )
+
+    def __str__(self):
+        return f"{self.title} - {self.status}"
 
     # Adiciona estes dois campos dentro da classe Alert:
     confirmations = models.ManyToManyField(
@@ -131,4 +168,31 @@ class AuthorityNotification(models.Model):
         return (
             f"{self.authority_name} → "
             f"{self.alert.title}"
+        )
+
+class AuthorityNotification(
+    models.Model
+):
+
+    alert = models.ForeignKey(
+        Alert,
+        on_delete=models.CASCADE
+    )
+
+    authority_name = (
+        models.CharField(
+            max_length=100
+        )
+    )
+
+    created_at = (
+        models.DateTimeField(
+            auto_now_add=True
+        )
+    )
+
+    def __str__(self):
+
+        return (
+            f"{self.authority_name}"
         )
